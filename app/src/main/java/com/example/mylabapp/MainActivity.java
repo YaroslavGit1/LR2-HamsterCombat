@@ -1,30 +1,35 @@
 package com.example.mylabapp;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
+import android.content.Intent;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.ThreadMode;
+import org.greenrobot.eventbus.Subscribe;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
 
-    private long count = 0;
+    private long count = 0, add = 1;
     private TextView text;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         text = findViewById(R.id.textView);
+        EventBus.getDefault().register(this);
+
     }
 
     public void onClick(View view) {
-        count++;
+        count += add;
         String timesText = getTimesText(count);
         text.setText(String.format("У вас на счете %d %s", count, timesText));
 
@@ -48,4 +53,34 @@ public class MainActivity extends AppCompatActivity {
             return "коинов";
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @SuppressLint("DefaultLocale")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Message event) {
+        count = event.getCount();
+        add = event.getAdd();
+        String timesText = getTimesText(count);
+        text.setText(String.format("У вас на счете %d %s", count, timesText));
+    }
+
+    public void OnClickShopActivity(View view){
+        Intent intent = new Intent(this, ShopActivity.class);
+        startActivity(intent);
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            EventBus.getDefault().post(new Message(count, add));
+        }, 200);
+    }
+
+    public void OnClickRateActivity(View view){
+        Intent intent = new Intent(this, RateActivity.class);
+        startActivity(intent);
+    }
+
 }
